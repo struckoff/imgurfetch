@@ -1,3 +1,6 @@
+/*
+	Download images from album by album URL.
+*/
 package main
 
 import (
@@ -17,6 +20,9 @@ import (
 const imageHost = "http://i.imgur.com"
 const albumHost = "http://imgur.com"
 
+/*
+	Download images from album by album URL.
+*/
 func main() {
 	flag.Usage = func() {
 		fmt.Fprintf(flag.CommandLine.Output(), "Usage of %s:\n", os.Args[0])

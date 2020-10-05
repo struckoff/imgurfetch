@@ -1,3 +1,20 @@
+/*
+	Download images from album by album URL.
+
+	```sh
+	imgurfetch -h
+
+	Usage of imgurfetch:
+	imgurfetch [arguments] <url> [path(default: .)]
+	  -g	group images by resolution
+	  -r duration
+			rate limit(how often requests could happen)
+	  -w int
+			number of workers (default 10)
+
+	```
+*/
+
 package imgurfetch
 
 import (
@@ -15,7 +32,7 @@ import (
 const imageURLTpl = "%s/%s%s"
 
 //ImageWorker - contains information about how to download images
-// and where to store them. Worker recieves tasks from "in" channel.
+// and where to store them. Worker receives tasks from "in" channel.
 //when task is done it send signal to "done" channel.
 //Before each task it asks limiter to get permission for execution.
 type ImageWorker struct {
@@ -71,7 +88,7 @@ func (w *ImageWorker) Run(ctx context.Context) {
 //If path is not exist, function will try to create it.
 //If flag grByRes is set, it will create sub directory WxH.
 func (w *ImageWorker) imageDownload(img Image) error {
-	url := fmt.Sprintf(imageUrlTpl, w.hostname, img.Hash, img.Ext)
+	url := fmt.Sprintf(imageURLTpl, w.hostname, img.Hash, img.Ext)
 	res, err := w.http.Get(url)
 	if err != nil {
 		return err
