@@ -14,6 +14,9 @@ import (
 	"time"
 )
 
+const imageHost = "http://i.imgur.com"
+const albumHost = "http://imgur.com"
+
 func main() {
 	flag.Usage = func() {
 		fmt.Fprintf(flag.CommandLine.Output(), "Usage of %s:\n", os.Args[0])
@@ -45,10 +48,8 @@ func main() {
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
 	go func() {
-		select {
-		case <-c:
-			cancel()
-		}
+		<-c
+		cancel()
 	}()
 
 	if err := run(ctx, u, d, *g, *w, *r); err != nil {
@@ -71,13 +72,13 @@ func run(ctx context.Context, url, dir string, grByRes bool, wn int, r time.Dura
 	}
 
 	albID := urlSplit[len(urlSplit)-1]
-	alb, err := imgurfetch.AlbumMeta(albID)
+	alb, err := imgurfetch.AlbumMeta(albumHost, albID)
 	if err != nil {
 		return err
 	}
 
 	for i := 0; i < wn; i++ {
-		w := imgurfetch.NewWorker(iCh, done, dir, grByRes, lim, nil)
+		w := imgurfetch.NewWorker(imageHost, iCh, done, dir, grByRes, lim, nil)
 		go w.Run(ctx)
 	}
 
@@ -90,8 +91,8 @@ func run(ctx context.Context, url, dir string, grByRes bool, wn int, r time.Dura
 	bar := pb.StartNew(len(alb.Data.Images))
 	for i := len(alb.Data.Images) - 1; i >= 0; i-- {
 		select {
-		 case <-ctx.Done():
-		 	return nil
+		case <-ctx.Done():
+			return nil
 		case <-done:
 			bar.Increment()
 		}

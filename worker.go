@@ -12,22 +12,30 @@ import (
 	"path"
 )
 
-const imageUrlTpl = "http://i.imgur.com/%s%s"
+const imageURLTpl = "%s/%s%s"
 
+//ImageWorker - contains information about how to download images
+// and where to store them. Worker recieves tasks from "in" channel.
+//when task is done it send signal to "done" channel.
+//Before each task it asks limiter to get permission for execution.
 type ImageWorker struct {
-	in      <-chan Image
-	done    chan<- struct{}
-	path    string
-	grByRes bool
-	http    *http.Client
-	limit *rate.Limiter
+	hostname string //i.imgur.com
+	in       <-chan Image
+	done     chan<- struct{}
+	path     string
+	grByRes  bool
+	http     *http.Client
+	limit    *rate.Limiter
 }
 
-func NewWorker(in <-chan Image, done chan<- struct{}, path string, grByRes bool, l *rate.Limiter, hc *http.Client) *ImageWorker {
+//NewWorker create new worker instance.
+//If grByRes is true, it will create sub directory WxH.
+func NewWorker(host string, in <-chan Image, done chan<- struct{}, path string, grByRes bool, l *rate.Limiter, hc *http.Client) *ImageWorker {
 	if hc == nil {
 		hc = http.DefaultClient
 	}
 	return &ImageWorker{
+		host,
 		in,
 		done,
 		path,
@@ -37,6 +45,8 @@ func NewWorker(in <-chan Image, done chan<- struct{}, path string, grByRes bool,
 	}
 }
 
+//Run loop which waits tasks in "in" channel until ctx signals done.
+//Before executing tasks it asks limiter for permission.
 func (w *ImageWorker) Run(ctx context.Context) {
 	for {
 		select {
@@ -44,7 +54,7 @@ func (w *ImageWorker) Run(ctx context.Context) {
 			return
 		case img := <-w.in:
 			if err := w.limit.Wait(ctx); err != nil {
-				if !errors.Is(err, context.Canceled){
+				if !errors.Is(err, context.Canceled) {
 					log.Err(err).Send()
 				}
 			}
@@ -57,13 +67,19 @@ func (w *ImageWorker) Run(ctx context.Context) {
 	}
 }
 
+//imageDownload downloads image and saves it to w.path
+//If path is not exist, function will try to create it.
+//If flag grByRes is set, it will create sub directory WxH.
 func (w *ImageWorker) imageDownload(img Image) error {
-	url := fmt.Sprintf(imageUrlTpl, img.Hash, img.Ext)
-	response, err := w.http.Get(url)
+	url := fmt.Sprintf(imageUrlTpl, w.hostname, img.Hash, img.Ext)
+	res, err := w.http.Get(url)
 	if err != nil {
 		return err
 	}
-	body, err := ioutil.ReadAll(response.Body)
+	if res.StatusCode >= 400 {
+		return errors.New(res.Status)
+	}
+	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		panic(err)
 	}

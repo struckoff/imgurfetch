@@ -1,5 +1,6 @@
 package imgurfetch
 
+//Image - information about image.
 type Image struct {
 	Hash   string `json:"hash"`
 	Title  string `json:"title"`
