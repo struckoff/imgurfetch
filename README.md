@@ -1,3 +1,8 @@
+[![PkgGoDev](https://pkg.go.dev/badge/github.com/struckoff/imgurfetch)](https://pkg.go.dev/github.com/struckoff/imgurfetch)
+![Go](https://github.com/struckoff/imgurfetch/workflows/Go/badge.svg?branch=master)
+[![Go Report Card](https://goreportcard.com/badge/github.com/struckoff/imgurfetch)](https://goreportcard.com/report/github.com/struckoff/imgurfetch)
+
+
 # Imgurfetch
 Download images from album by album URL.
 
